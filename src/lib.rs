@@ -11,7 +11,7 @@ use serde::Serialize;
 
 lazy_static! {
     static ref RE_DATE: Regex = Regex::new(r"\d{2}\.\d{2}\.\d{4}").unwrap();
-    static ref RE_NUMBER: Regex = Regex::new(r"\d+,\d+").unwrap();
+    static ref RE_NUMBER: Regex = Regex::new(r"[+-]?\d*\.?\d+,\d+").unwrap();
 }
 static STARTING_TEXT: &str = "ALTER SALDO";
 static ENDING_TEXT: &str = "NEUER SALDO";
@@ -71,6 +71,7 @@ fn get_transactions(text: &str) -> Vec<Transaction> {
         let amount = match RE_NUMBER.find(amount) {
             Some(m) => m
                 .as_str()
+                .replace(".", "")
                 .replace(",", ".")
                 .parse::<f64>()
                 .unwrap_or_default(),
@@ -173,12 +174,16 @@ BORLANGE
 FABRIQUE - SEK 1111,00 (KURS 11,1111)
 STOCKHOLM
 19,23
+01.07.2022
+PRODUCTS
+BERLIN
+-1.111,11
 27.11.2023
 Inc. - SEK 111,11 (KURS 11,1111)
 UPPLANDS VAS
 14,62 some ending"#;
         let transactions = get_transactions(text);
-        assert_eq!(transactions.len(), 3);
+        assert_eq!(transactions.len(), 4);
         assert_eq!(
             transactions[0],
             Transaction {
@@ -197,6 +202,14 @@ UPPLANDS VAS
         );
         assert_eq!(
             transactions[2],
+            Transaction {
+                date: "01.07.2022".to_string(),
+                description: "PRODUCTS, BERLIN".to_string(),
+                amount: -1111.11,
+            }
+        );
+        assert_eq!(
+            transactions[3],
             Transaction {
                 date: "27.11.2023".to_string(),
                 description: "Inc. - SEK 111,11 (KURS 11,1111), UPPLANDS VAS".to_string(),
