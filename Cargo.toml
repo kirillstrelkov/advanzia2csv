@@ -1,6 +1,6 @@
 [package]
 name = "advanzia2csv"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Convert Advanzia PDF to CSV."
 readme = "README.md"
