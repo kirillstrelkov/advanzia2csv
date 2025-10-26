@@ -16,7 +16,7 @@ lazy_static! {
 static STARTING_TEXT: &str = "ALTER SALDO";
 static ENDING_TEXT: &str = "NEUER SALDO";
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Transaction {
     pub date: String,
     pub description: String,
@@ -113,7 +113,7 @@ fn get_transactions_from_pdf(document: &Document) -> Vec<Transaction> {
     transactions
 }
 
-pub fn advanzia2csv(pdf_or_folder: &Path, csv_file: &Path) -> Result<()> {
+pub fn advanzia2csv(pdf_or_folder: &Path, csv_file: &Path, swap_sign: bool) -> Result<()> {
     let paths = if pdf_or_folder.is_dir() {
         glob(&format!("{}/**/*.pdf", pdf_or_folder.display()))?
             .filter_map(Result::ok)
@@ -153,7 +153,11 @@ pub fn advanzia2csv(pdf_or_folder: &Path, csv_file: &Path) -> Result<()> {
     let mut writer = Writer::from_writer(file);
 
     for record in transactions {
-        writer.serialize(record)?;
+        let mut transaction = record.clone();
+        if swap_sign {
+            transaction.amount = -transaction.amount;
+        }
+        writer.serialize(transaction)?;
     }
     writer.flush()?;
 

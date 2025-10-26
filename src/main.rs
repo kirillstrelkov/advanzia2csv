@@ -45,6 +45,9 @@ struct Args {
     input: PathBuf,
     /// Path to output CSV file
     output: PathBuf,
+    /// Swap sign of the amount
+    #[arg(long, default_value_t = false)]
+    swap_sign: bool,
     /// Log level
     #[arg(short, long, default_value_t = LogLevel::Info)]
     log_level: LogLevel,
@@ -79,5 +82,5 @@ fn setup_logger(log_level: LevelFilter) -> Result<()> {
 fn main() -> Result<()> {
     let args = Args::parse();
     setup_logger(args.log_level.into())?;
-    advanzia2csv(&args.input, &args.output)
+    advanzia2csv(&args.input, &args.output, args.swap_sign)
 }
