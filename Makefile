@@ -27,6 +27,9 @@ run:
 fix:
 	cargo fix --allow-dirty
 
+release:
+	cargo build --release
+
 tag:
 	git tag -a v$(VERSION) -m "Release v$(VERSION)"
 	@echo "To push the tag to remote, run:"
