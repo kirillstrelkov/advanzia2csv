@@ -1,3 +1,5 @@
+VERSION := $(shell grep '^version' Cargo.toml | cut -d '"' -f2)
+
 all: fix fmt check build test
 
 clean:
@@ -24,3 +26,8 @@ run:
 
 fix:
 	cargo fix --allow-dirty
+
+tag:
+	git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	@echo "To push the tag to remote, run:"
+	@echo "git push origin v$(VERSION)"
