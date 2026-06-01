@@ -1,42 +1,8 @@
-use std::{fmt, path::PathBuf};
+use std::path::PathBuf;
 
 use advanzia2csv::advanzia2csv;
 use anyhow::Result;
 use clap::{command, Parser, ValueEnum};
-use fern::colors::{Color, ColoredLevelConfig};
-use log::LevelFilter;
-
-#[derive(ValueEnum, Clone, Debug)]
-enum LogLevel {
-    Error,
-    Warn,
-    Info,
-    Debug,
-    Trace,
-}
-
-impl From<LogLevel> for LevelFilter {
-    fn from(level: LogLevel) -> Self {
-        match level {
-            LogLevel::Error => LevelFilter::Error,
-            LogLevel::Warn => LevelFilter::Warn,
-            LogLevel::Info => LevelFilter::Info,
-            LogLevel::Debug => LevelFilter::Debug,
-            LogLevel::Trace => LevelFilter::Trace,
-        }
-    }
-}
-impl fmt::Display for LogLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            LogLevel::Error => write!(f, "error"),
-            LogLevel::Warn => write!(f, "warn"),
-            LogLevel::Info => write!(f, "info"),
-            LogLevel::Debug => write!(f, "debug"),
-            LogLevel::Trace => write!(f, "trace"),
-        }
-    }
-}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -49,38 +15,29 @@ struct Args {
     #[arg(long, default_value_t = false)]
     swap_sign: bool,
     /// Log level
-    #[arg(short, long, default_value_t = LogLevel::Info)]
+    #[arg(short = 'l', long = "log-level", value_enum, default_value = "info")]
     log_level: LogLevel,
 }
 
-fn setup_logger(log_level: LevelFilter) -> Result<()> {
-    let colors = ColoredLevelConfig::new()
-        .error(Color::Red)
-        .warn(Color::Yellow)
-        .info(Color::Green)
-        .debug(Color::Cyan)
-        .trace(Color::Magenta);
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
 
-    fern::Dispatch::new()
-        .format(move |out, message, record| {
-            out.finish(format_args!(
-                "[{}][{}][{}] {}",
-                chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
-                record.target(),
-                colors.color(record.level()),
-                message
-            ))
-        })
-        .level(log::LevelFilter::Warn) // Set the default level
-        .level_for(module_path!(), log_level) // Set the default level
-        .chain(std::io::stdout())
-        .apply()?;
+fn init_logger(level: LogLevel) {
+    let level_str = format!("{:?}", level).to_lowercase();
 
-    Ok(())
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(&level_str))
+        .target(env_logger::Target::Stderr)
+        .init();
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    setup_logger(args.log_level.into())?;
+    init_logger(args.log_level);
     advanzia2csv(&args.input, &args.output, args.swap_sign)
 }
